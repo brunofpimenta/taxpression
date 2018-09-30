@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import com.brunopimenta.taxpression.exception.KeyNotFoundException;
 import com.brunopimenta.taxpression.service.ResolveExpressionService;
 
 @RunWith(SpringRunner.class)
@@ -50,6 +51,36 @@ public class ResolveExpressionServiceTests {
 
 		assertThat( result, is( BigDecimal.valueOf( 75.0 ) ) );
 
+	}
+
+	@Test(expected = KeyNotFoundException.class)
+	public void errorWhenFirstKeyNotFound() throws ScriptException {
+		Map<String, String> expressions = new TreeMap<>();
+		expressions.put( "valueICMS", "({valueBaseCalculo} * {aliqICMS})" );
+		expressions.put( "valueBaseCalculo", "({valueTotalProducts})" );
+
+		Map<String, String> declaredValues = new TreeMap<>();
+		declaredValues.put( "aliqICMS", "0.25" );
+		declaredValues.put( "valueTotalProducts", "100.0" );
+
+		String desiredValue = "total";
+
+		resolveExpressionService.calculate( desiredValue, declaredValues, expressions );
+	}
+
+	@Test(expected = KeyNotFoundException.class)
+	public void errorWhenSomeKeyNotFound() throws ScriptException {
+		Map<String, String> expressions = new TreeMap<>();
+		expressions.put( "valueTotal", "({valueTotalProducts} - {valueICMS})" );
+		expressions.put( "valueBaseCalculo", "({valueTotalProducts})" );
+
+		Map<String, String> declaredValues = new TreeMap<>();
+		declaredValues.put( "aliqICMS", "0.25" );
+		declaredValues.put( "valueTotalProducts", "100.0" );
+
+		String desiredValue = "total";
+
+		resolveExpressionService.calculate( desiredValue, declaredValues, expressions );
 	}
 
 }

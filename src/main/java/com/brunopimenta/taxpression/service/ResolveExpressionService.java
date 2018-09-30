@@ -16,6 +16,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.brunopimenta.taxpression.exception.KeyNotFoundException;
+
 @Service
 public class ResolveExpressionService {
 
@@ -30,20 +32,8 @@ public class ResolveExpressionService {
 	}
 
 	public BigDecimal calculate(String desiredValue, Map<String, String> informedValues,
-			Map<String, String> storedExpressions)
-			throws ScriptException {
+			Map<String, String> storedExpressions) throws ScriptException {
 		Map<String, String> expressions = getAllExpressions( informedValues, storedExpressions );
-
-		// 1- cria a key pelo valor de entrada
-		// 2- PEga na lista de expressoes a expressao dessa key
-
-		// 3- Extrai da expressao a primeira ocorrencia de key
-		// 4- Pega o valor dessa key na lista de expressoes
-		// 5- sobrescreve a expressao substituindo a chave pela expressao obtida
-
-		// 6- Extrai a primeira chave dessa expressao
-		// 7- pega a expressao referente a essa chave
-		// 8- substitui na expressao essa chave pelo valor dela
 
 		String resolvedExpression = resolveCompleteExpression( desiredValue, null, expressions );
 
@@ -64,10 +54,17 @@ public class ResolveExpressionService {
 
 	private String getExpression(String expressionKey, String expression, Map<String, String> expressions) {
 		if (Objects.isNull( expression ))
-			return expressions.get( getFirstKey( expressionKey ) );
+			return getExpressionByKey( expressions, getFirstKey( expressionKey ) );
 
 		String nextKey = getNextKey( expression );
-		return expression.replace( getExpressionKey( nextKey ), expressions.get( expressionKey ) );
+		return expression.replace( getExpressionKey( nextKey ), getExpressionByKey( expressions, expressionKey ) );
+	}
+
+	private String getExpressionByKey(Map<String, String> expressions, String key) {
+		String expression = expressions.get( key );
+		if (Objects.isNull( expression ))
+			throw new KeyNotFoundException( "Key [" + key + "] was not found!" );
+		return expression;
 	}
 
 	private String getNextKey(String expression) {
